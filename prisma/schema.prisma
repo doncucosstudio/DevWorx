@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Truck {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  tagline     String   @default("")
+  description String   @default("")
+  logoEmoji   String   @default("🚚")
+  logoUrl     String?
+  coverUrl    String?
+
+  // Theme / branding customization
+  primaryColor   String @default("#ea580c")
+  secondaryColor String @default("#1c1917")
+  accentColor    String @default("#facc15")
+  fontFamily     String @default("system")
+  cornerStyle    String @default("rounded") // sharp | rounded | pill
+
+  // Operations
+  isOpen               Boolean @default(true)
+  location             String  @default("")
+  hoursText            String  @default("")
+  estimatedWaitMinutes Int     @default(15)
+  taxRatePercent       Float   @default(0)
+  currencySymbol       String  @default("$")
+  orderPrefix          String  @default("FT")
+
+  contactPhone String @default("")
+  contactEmail String @default("")
+  socialLinks  String @default("[]") // JSON string: [{label, url}]
+
+  categories MenuCategory[]
+  orders     Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MenuCategory {
+  id          String @id @default(cuid())
+  truckId     String
+  truck       Truck  @relation(fields: [truckId], references: [id], onDelete: Cascade)
+  name        String
+  description String @default("")
+  sortOrder   Int    @default(0)
+
+  items MenuItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MenuItem {
+  id          String       @id @default(cuid())
+  categoryId  String
+  category    MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name        String
+  description String       @default("")
+  priceCents  Int
+  imageEmoji  String       @default("🍽️")
+  imageUrl    String?
+  isAvailable Boolean      @default(true)
+  isFeatured  Boolean      @default(false)
+  sortOrder   Int          @default(0)
+
+  modifierGroups ModifierGroup[]
+  orderItems     OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ModifierGroup {
+  id         String   @id @default(cuid())
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  name       String
+  minSelect  Int      @default(0)
+  maxSelect  Int      @default(1)
+  required   Boolean  @default(false)
+  sortOrder  Int      @default(0)
+
+  options ModifierOption[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ModifierOption {
+  id              String        @id @default(cuid())
+  groupId         String
+  group           ModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  name            String
+  priceDeltaCents Int           @default(0)
+  isDefault       Boolean       @default(false)
+  sortOrder       Int           @default(0)
+
+  orderItemModifiers OrderItemModifier[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Order {
+  id            String @id @default(cuid())
+  orderNumber   String @unique
+  truckId       String
+  truck         Truck  @relation(fields: [truckId], references: [id], onDelete: Cascade)
+  customerName  String
+  customerPhone String
+  pickupNote    String @default("")
+  status        String @default("PENDING") // PENDING | PREPARING | READY | COMPLETED | CANCELLED
+  subtotalCents Int
+  taxCents      Int
+  totalCents    Int
+  notes         String @default("")
+
+  items OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OrderItem {
+  id             String    @id @default(cuid())
+  orderId        String
+  order          Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId     String?
+  menuItem       MenuItem? @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
+  nameSnapshot   String
+  unitPriceCents Int
+  quantity       Int
+  notes          String    @default("")
+
+  modifiers OrderItemModifier[]
+
+  createdAt DateTime @default(now())
+}
+
+model OrderItemModifier {
+  id               String          @id @default(cuid())
+  orderItemId      String
+  orderItem        OrderItem       @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  modifierOptionId String?
+  modifierOption   ModifierOption? @relation(fields: [modifierOptionId], references: [id], onDelete: SetNull)
+  nameSnapshot     String
+  priceDeltaCents  Int
+}
