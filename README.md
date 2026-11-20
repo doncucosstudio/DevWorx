@@ -58,3 +58,9 @@ npm run build       # production build
 npm run db:seed     # reset and seed the database with example data
 npm run db:reset     # drop and re-apply all migrations
 ```
+
+## Also in this repo
+
+- [`keepsake-video/`](keepsake-video/README.md) — Keepsake, a separate app that
+  creates personalized holiday, celebration and memorial videos (up to 5 people
+  or pets) entirely in the browser.
